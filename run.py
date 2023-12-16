@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Created by Yevgeniy Goncharov, https://lab.sys-adm.in
+# Change nice priority of a specified process
 
 import argparse
 import subprocess
