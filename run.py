@@ -3,32 +3,40 @@
 # Change nice priority of a specified process
 
 import argparse
+import os
+import signal
 import subprocess
 
 
-def find_pid(process_name):
+def find_pids(process_name):
     try:
-        pid = subprocess.check_output(['pgrep', process_name])
-        return int(pid.strip())
+        pid_list = subprocess.check_output(['pgrep', process_name])
+        return list(map(int, pid_list.split()))
     except subprocess.CalledProcessError:
-        print(f"Process {process_name} not found")
-        return None
+        print(f"Process {process_name} not found.")
+        return []
 
 
-def renice_process(pid, priority):
+def renice_process(pid, new_priority):
     try:
-        subprocess.run(['renice', str(priority), '-p', str(pid)])
-        print(f"Priority of PID {pid} changed to {priority}.")
-    except subprocess.CalledProcessError:
-        print(f"Error set nice priority for PID {pid}.")
+        os.nice(new_priority)
+        print(f"Priority for PID {pid} changed to {new_priority}.")
+    except PermissionError:
+        print("You don't have rights to change the priority of this process.")
+    except Exception as e:
+        print(f"Error while changing the priority of PID {pid}: {e}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Change priority of a process.")
-    parser.add_argument("process_name", type=str, help="Name of the process.")
-    parser.add_argument("priority", type=int, help="Priority to set.")
+    parser = argparse.ArgumentParser(description="Change nice priority of a specified process.")
+    parser.add_argument("process_name", help="Process name.")
+    parser.add_argument("--priority", type=int, default=0, help="New nice priority.")
     args = parser.parse_args()
 
-    pid = find_pid(args.process_name)
-    if pid is not None:
+    process_pids = find_pids(args.process_name)
+
+    if not process_pids:
+        exit()
+
+    for pid in process_pids:
         renice_process(pid, args.priority)
